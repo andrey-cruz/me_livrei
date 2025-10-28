@@ -9,7 +9,6 @@
 [![Firebase](https://img.shields.io/badge/Firebase-Enabled-FFCA28?logo=firebase)](https://firebase.google.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Made with Love](https://img.shields.io/badge/Made%20with-❤️-red.svg)](https://github.com/andrey-cruz/me-livrei)
 
 </div>
 
@@ -340,5 +339,6 @@ Se você achou este projeto útil ou interessante, considere:
 
 
 </div>
+
 
 
