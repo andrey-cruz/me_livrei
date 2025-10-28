@@ -46,7 +46,6 @@ Um **ecossistema social de troca de livros** que democratiza o acesso à literat
 - Login/Cadastro com email/senha
 - Recuperação de senha
 - Perfil personalizável completo
-- Sistema de níveis (Bronze → Diamante)
 - Dashboard de estatísticas pessoais
 
 </td>
@@ -54,9 +53,7 @@ Um **ecossistema social de troca de livros** que democratiza o acesso à literat
   
 ### 📚 Gestão de Livros
 - Cadastro com foto (Firebase Storage)
-- **Scan de código ISBN** para auto-preenchimento
 - Edição e exclusão de livros próprios
-- Status dinâmico (Disponível/Em Troca/Trocado)
 - Motivação de desapego personalizada
 
 </td>
@@ -67,8 +64,7 @@ Um **ecossistema social de troca de livros** que democratiza o acesso à literat
 - Notificações em tempo real
 - Lista de interessados detalhada
 - Aceitar/recusar interesses
-- Sistema de "match" facilitado
-
+  
 </td>
 </tr>
 </table>
@@ -344,4 +340,5 @@ Se você achou este projeto útil ou interessante, considere:
 
 
 </div>
+
 
