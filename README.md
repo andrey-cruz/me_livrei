@@ -192,8 +192,9 @@ dart pub global activate flutterfire_cli
 flutterfire configure
 ```
 
----
+</details>
 
+---
 
 ## 🤝 Contribuindo
 
@@ -343,3 +344,4 @@ Se você achou este projeto útil ou interessante, considere:
 
 
 </div>
+
