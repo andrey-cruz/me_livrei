@@ -40,7 +40,7 @@ Um **ecossistema social de troca de livros** que democratiza o acesso à literat
 
 <table>
 <tr>
-<td width="50%">
+<td width="33%">
 
 ### 🔐 Autenticação & Perfil
 - Login/Cadastro com email/senha
@@ -49,6 +49,9 @@ Um **ecossistema social de troca de livros** que democratiza o acesso à literat
 - Sistema de níveis (Bronze → Diamante)
 - Dashboard de estatísticas pessoais
 
+</td>
+<td width="33%">
+  
 ### 📚 Gestão de Livros
 - Cadastro com foto (Firebase Storage)
 - **Scan de código ISBN** para auto-preenchimento
@@ -57,7 +60,7 @@ Um **ecossistema social de troca de livros** que democratiza o acesso à literat
 - Motivação de desapego personalizada
 
 </td>
-<td width="50%">
+<td width="33%">
 
 ### ❤️ Sistema de Interesses
 - Demonstrar interesse em livros
@@ -228,15 +231,15 @@ Para mais detalhes, leia nosso [Guia de Contribuição](CONTRIBUTING.md).
 <sub>Soon</sub>
 </td>
 <td align="center" width="20%">
-<a href="https://github.com/joao-bittar">
-<img src="https://github.com/joao-bittar.png" width="100px;" alt="João Bittar"/><br>
+<a href="https://github.com/JoaoPedroBittar">
+<img src="https://github.com/JoaoPedroBittar.png" width="100px;" alt="João Pedro Bittar"/><br>
 <sub><b>João P. Bittar</b></sub>
 </a><br>
 <sub>Soon</sub>
 </td>
 <td align="center" width="20%">
-<a href="https://github.com/matheus-picolli">
-<img src="https://github.com/matheus-picolli.png" width="100px;" alt="Matheus Picolli"/><br>
+<a href="https://github.com/MPicolli">
+<img src="https://github.com/MPicolli.png" width="100px;" alt="Matheus Picolli Ishibashi"/><br>
 <sub><b>Matheus Picolli</b></sub>
 </a><br>
 <sub>Soon</sub>
@@ -249,8 +252,8 @@ Para mais detalhes, leia nosso [Guia de Contribuição](CONTRIBUTING.md).
 <sub>Soon</sub>
 </td>
 <td align="center" width="20%">
-<a href="https://github.com/kamily-curcio">
-<img src="https://github.com/kamily-curcio.png" width="100px;" alt="Kamily Cúrcio"/><br>
+<a href="https://github.com/KamilyCurcio">
+<img src="https://github.com/KamilyCurcio.png" width="100px;" alt="Kamily Cúrcio"/><br>
 <sub><b>Kamily Cúrcio</b></sub>
 </a><br>
 <sub>Soon</sub>
@@ -337,5 +340,6 @@ Se você achou este projeto útil ou interessante, considere:
 <sub>Projeto Acadêmico A3 • 2025 • Florianópolis, SC, Brasil 🇧🇷</sub>
 
 *"Cada livro trocado é uma nova história que começa."*
+
 
 </div>
