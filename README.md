@@ -27,15 +27,23 @@
 
 ### 💡 Nossa Solução
 
-Um **ecossistema social de troca de livros** que democratiza o acesso à literatura, promove sustentabilidade e fortalece comunidades de leitores através de:
+Um **ecossistema social de compartilhamento de livros** que democratiza o acesso à literatura, promove sustentabilidade e fortalece comunidades de leitores através de:
 
-- 🔍 **Sistema de busca dual** — Procure por livros ou encontre pessoas com gostos literários similares
-- 📍 **Geolocalização** — Encontre livros disponíveis perto de você
-- ❤️ **Sistema de match** — Demonstre interesse e conecte-se diretamente com o dono
+- 📖 **Catálogo colaborativo** — Exponha livros que você já leu e deseja disponibilizar
+- 🔍 **Sistema de busca inteligente** — Procure por livros através de título, autor, cidade ou gênero
+- ❤️ **Demonstração de interesse** — Conecte-se diretamente com donos de livros
+- 📍 **Busca por localização** — Encontre livros disponíveis na sua cidade
+
+### Objetivos
+
+1. **Democratizar o acesso à leitura** através do compartilhamento de livros
+2. **Conectar leitores** com interesses literários similares
+3. **Promover sustentabilidade** através da economia circular de livros
+4. **Facilitar o contato** entre usuários sem intermediar a troca
 
 ---
 
-## 🎯 Funcionalidades Principais
+## ⚡ Funcionalidades
 
 <table>
 <tr>
@@ -44,25 +52,25 @@ Um **ecossistema social de troca de livros** que democratiza o acesso à literat
 ### 🔐 Autenticação & Perfil
 - Login/Cadastro com email/senha
 - Recuperação de senha
-- Perfil personalizável completo
-- Dashboard de estatísticas pessoais
+- Edição de perfil completo
 
 </td>
 <td width="33%">
   
 ### 📚 Gestão de Livros
-- Cadastro com foto (Firebase Storage)
-- Edição e exclusão de livros próprios
-- Motivação de desapego personalizada
+- Cadastro com foto da capa
+- Edição e exclusão de livros
+- Atualização de status
+- Busca por múltiplos critérios
 
 </td>
 <td width="33%">
 
 ### ❤️ Sistema de Interesses
 - Demonstrar interesse em livros
-- Notificações em tempo real
-- Lista de interessados detalhada
-- Aceitar/recusar interesses
+- Visualizar lista de interessados
+- Cancelar interesse
+- Facilitar contato entre usuários
   
 </td>
 </tr>
@@ -339,6 +347,7 @@ Se você achou este projeto útil ou interessante, considere:
 
 
 </div>
+
 
 
 
