@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:me_livrei/constants/app_colors.dart';
 import 'package:me_livrei/screens/home_screen.dart';
+import 'package:me_livrei/screens/my_books_screen.dart';
+import 'package:me_livrei/screens/profile_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -11,7 +14,11 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  static const List<Widget> _screens = <Widget>[HomeScreen()];
+  static const List<Widget> _screens = <Widget>[
+    HomeScreen(),
+    MyBooksScreen(),
+    ProfileScreen(),
+  ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -24,9 +31,13 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: _screens.elementAt(_selectedIndex),
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Color(0xFF622D23),
+        selectedFontSize: 14,
+        unselectedFontSize: 14,
         type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.blue,
+        unselectedItemColor: AppColors.brancoCreme,
         onTap: _onItemTapped,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
