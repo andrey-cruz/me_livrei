@@ -1,6 +1,6 @@
 // 📘 lib/screens/book_detail_screen.dart
 import 'package:flutter/material.dart';
-import '../models/book.dart';
+import 'package:me_livrei/models/Book.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 // 🎯 MUDANÇA: Convertido para StatefulWidget

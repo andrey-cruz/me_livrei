@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:me_livrei/constants/app_colors.dart';
 import 'package:me_livrei/screens/home_screen.dart';
-import 'package:me_livrei/screens/my_books_screen.dart';
+import 'package:me_livrei/screens/book_detail_screen.dart';
 import 'package:me_livrei/screens/profile_screen.dart';
+import 'package:me_livrei/models/Book.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -14,9 +15,19 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  static const List<Widget> _screens = <Widget>[
+  // Mock Book
+  static final Book _book = Book(
+    id: '1',
+    userId: '123',
+    title: 'Pequeno Príncipe',
+    author: 'fdf',
+    description: 'fdsfsf',
+    coverUrl: 'vss',
+  );
+
+  static List<Widget> get _screens => <Widget>[
     HomeScreen(),
-    MyBooksScreen(),
+    BookDetailScreen(book: _book),
     ProfileScreen(),
   ];
 
