@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:me_livrei/constants/app_colors.dart';
+import 'package:me_livrei/widgets/book_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -57,8 +58,12 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.fromLTRB(32, 0, 124, 16),
             child: Row(
               children: [
-                Icon(Icons.show_chart, size: 24, color: AppColors.terracotaQueimado),
-                SizedBox(width: 8,),
+                Icon(
+                  Icons.show_chart,
+                  size: 24,
+                  color: AppColors.terracotaQueimado,
+                ),
+                SizedBox(width: 8),
                 Text(
                   'Destaque do Me Livrei',
                   style: TextStyle(
