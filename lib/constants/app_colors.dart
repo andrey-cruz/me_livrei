@@ -17,6 +17,7 @@ class AppColors {
   static const Color cinzaPoeira = Color(0xFF8B8680);
   static const Color begePapel = Color(0xFFFAF7F2);
   static const Color brancoCreme = Color(0xFFFFFBF5);
+  static const Color farinhaTrigo = Color(0xFFEFE2CF);
 
   // Accent Colors
   static const Color bordoLiterario = Color(0xFF8B3A3A);
