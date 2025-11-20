@@ -73,9 +73,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SliverList(
             delegate: SliverChildListDelegate(
               [
-                _buildSectionHeader('Minha estante', Icons.bookmark_border, () {}),
+                _buildSectionHeader(
+                    'Minha estante', Icons.bookmark_border, () {}),
                 _buildBookList(myBooks),
-                _buildSectionHeader('Meus interesses', Icons.star_border, () {}),
+                _buildSectionHeader(
+                    'Meus interesses', Icons.star_border, () {}),
                 _buildBookList(myBooks),
                 const SizedBox(height: 80),
               ],
