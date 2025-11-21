@@ -100,10 +100,79 @@ class _HomeScreenState extends State<HomeScreen> {
                       author: 'Autor2',
                       onTap: () {},
                     ),
+                    BookCard(
+                      imageUrl: 'abc',
+                      title: 'Livro3',
+                      author: 'Autor3',
+                      onTap: () {},
+                    ),
+                    BookCard(
+                      imageUrl: 'abc',
+                      title: 'Livro4',
+                      author: 'Autor4',
+                      onTap: () {},
+                    ),
                   ],
                 ),
               ),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(32, 36, 124, 16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.bookmark_add,
+                    size: 24,
+                    color: AppColors.terracotaQueimado,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Meus Interesses',
+                    style: TextStyle(
+                      color: AppColors.carvaoSuave,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(
+              height: 308,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    BookCard(
+                      imageUrl: 'abc',
+                      title: 'Livro1',
+                      author: 'Autor1',
+                      onTap: () {},
+                    ),
+                    BookCard(
+                      imageUrl: 'abc',
+                      title: 'Livro2',
+                      author: 'Autor2',
+                      onTap: () {},
+                    ),
+                    BookCard(
+                      imageUrl: 'abc',
+                      title: 'Livro3',
+                      author: 'Autor3',
+                      onTap: () {},
+                    ),
+                    BookCard(
+                      imageUrl: 'abc',
+                      title: 'Livro4',
+                      author: 'Autor4',
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 30),
           ],
         ),
       ),

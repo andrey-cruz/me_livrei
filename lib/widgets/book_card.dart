@@ -19,7 +19,8 @@ class BookCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: SizedBox(
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(12, 0, 4, 0),
         width: 180,
         height: 292,
         child: Column(
@@ -69,18 +70,26 @@ class BookCard extends StatelessWidget {
               ),
             ),
             SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(fontSize: 16, color: AppColors.carvaoSuave),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Text(
+                title,
+                textAlign: TextAlign.left,
+                style: TextStyle(fontSize: 16, color: AppColors.carvaoSuave),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             SizedBox(height: 4),
-            Text(
-              author,
-              style: TextStyle(fontSize: 12, color: AppColors.cinzaPoeira),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Text(
+                author,
+                textAlign: TextAlign.left,
+                style: TextStyle(fontSize: 12, color: AppColors.cinzaPoeira),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
