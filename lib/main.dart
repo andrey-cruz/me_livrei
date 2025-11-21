@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:me_livrei/screens/main_screen.dart';
+import 'package:me_livrei/screens/loading_screen.dart';
 
 void main() {
-  runApp(MaterialApp(home: MainScreen()));
+  runApp(
+    MaterialApp(
+      title: 'Me Livrei',
+      home: const LoadingScreen(),
+      debugShowCheckedModeBanner: false,
+    ),
+  );
 }
