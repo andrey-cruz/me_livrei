@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/validators.dart';
-import '../widgets/custom_input_field.dart'; // NOVO IMPORT
+import '../widgets/custom_input_field.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

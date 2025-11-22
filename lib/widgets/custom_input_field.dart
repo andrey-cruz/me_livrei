@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
+import 'package:flutter/services.dart';
 
 class CustomInputField extends StatelessWidget {
   final String label;
@@ -11,6 +12,7 @@ class CustomInputField extends StatelessWidget {
   final TextInputAction textInputAction;
   final bool enabled;
   final String? hintText;
+  final List<TextInputFormatter>? inputFormatters;
 
   const CustomInputField({
     super.key,
@@ -23,6 +25,7 @@ class CustomInputField extends StatelessWidget {
     this.textInputAction = TextInputAction.next,
     this.enabled = true,
     this.hintText,
+    this.inputFormatters,
   });
 
   @override
@@ -49,6 +52,7 @@ class CustomInputField extends StatelessWidget {
           validator: validator,
           keyboardType: maxLines > 1 ? TextInputType.multiline : keyboardType,
           textInputAction: maxLines > 1 ? TextInputAction.newline : textInputAction,
+          inputFormatters: inputFormatters,
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: const TextStyle(color: AppColors.cinzaPoeira),

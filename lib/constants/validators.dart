@@ -2,6 +2,8 @@ class AuthValidator {
   AuthValidator._();
 
   static final RegExp _emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+  static final RegExp _usernameRegex = RegExp(r'^[a-zA-Z0-9_]{3,20}$');
+  static final RegExp _phoneRegex = RegExp(r'^\d{10,13}$');
 
   static String? validateEmail(String? value) {
     if (value == null || value.isEmpty) {
@@ -53,6 +55,31 @@ class AuthValidator {
     return null;
   }
 
+  static String? validateUsername(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Por favor, insira um nome de usuário';
+    }
+
+    final trimmedValue = value.trim();
+    if (!_usernameRegex.hasMatch(trimmedValue)) {
+      return 'O username deve ter entre 3 e 20 caracteres e conter apenas letras, números e _';
+    }
+    return null;
+  }
+
+  static String? validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Por favor, insira seu telefone';
+    }
+
+    final phone = value.replaceAll(RegExp(r'\D'), '');
+
+    if (!_phoneRegex.hasMatch(phone)) {
+      return 'Telefone inválido, use DDD + número (10 ou 11 dígitos)';
+    }
+    return null;
+  }
+
   static Map<String, String?> validateLoginForm(String email, String password) {
     return {
       'email': validateEmail(email),
@@ -60,17 +87,29 @@ class AuthValidator {
     };
   }
 
-  static Map<String, String?> validateRegisterForm(
-      String name,
+  static Map<String, String?> validateRegisterForm(String name,
+      String username,
       String email,
+      String phone,
       String password,
-      String confirmPassword,
-      ) {
+      String confirmPassword,) {
+    return {
+      'name': validateName(name),
+      'username': validateUsername(username),
+      'email': validateEmail(email),
+      'phone': validatePhone(phone),
+      'password': validatePassword(password),
+      'confirmPassword': validateConfirmPassword(confirmPassword, password),
+    };
+  }
+
+  static Map<String, String?> validateProfileForm(String name,
+      String email,
+      String phone,) {
     return {
       'name': validateName(name),
       'email': validateEmail(email),
-      'password': validatePassword(password),
-      'confirmPassword': validateConfirmPassword(confirmPassword, password),
+      'phone': validatePhone(phone),
     };
   }
 }
