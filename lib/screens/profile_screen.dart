@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-
 import '../models/Book.dart';
+import '../widgets/book_card.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -9,42 +9,43 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-final List<Book> myBooks = [
-  Book(
-    id: '1',
-    userId: '1',
-    title: 'O Pequeno Príncipe',
-    author: 'Antoine de Saint-Exupéry',
-    description: 'abc',
-    coverUrl: 'abc',
-  ),
-  Book(
-    id: '2',
-    userId: '2',
-    title: 'Maze Runner: Correr ou Morrer',
-    author: 'James Dashner',
-    description: 'abc',
-    coverUrl: 'abc',
-  ),
-  Book(
-    id: '3',
-    userId: '3',
-    title: '1984',
-    author: 'George Orwell',
-    description: 'abc',
-    coverUrl: 'abc',
-  ),
-  Book(
-    id: '4',
-    userId: '4',
-    title: 'Fahrenheit 451',
-    author: 'Ray Bradbury',
-    description: 'abc',
-    coverUrl: 'abc',
-  ),
-];
-
 class _ProfileScreenState extends State<ProfileScreen> {
+
+  final List<Book> myBooks = [
+    Book(
+      id: '1',
+      userId: '1',
+      title: 'O Pequeno Príncipe',
+      author: 'Antoine de Saint-Exupéry',
+      description: 'abc',
+      coverUrl: 'https://m.media-amazon.com/images/I/81QluJ4QXyL._SY425_.jpg',
+    ),
+    Book(
+      id: '2',
+      userId: '2',
+      title: 'Maze Runner: Correr ou Morrer',
+      author: 'James Dashner',
+      description: 'abc',
+      coverUrl: 'https://m.media-amazon.com/images/I/51UqHWh58-L._SY445_SX342_ML2_.jpg',
+    ),
+    Book(
+      id: '3',
+      userId: '3',
+      title: '1984',
+      author: 'George Orwell',
+      description: 'abc',
+      coverUrl: 'https://m.media-amazon.com/images/I/61t0bwt1s3L._SY425_.jpg',
+    ),
+    Book(
+      id: '4',
+      userId: '4',
+      title: 'Fahrenheit 451',
+      author: 'Ray Bradbury',
+      description: 'abc',
+      coverUrl: 'https://m.media-amazon.com/images/I/51tAD6LyZ-L._SY466_.jpg',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -185,68 +186,20 @@ Widget _buildSectionHeader(String title, IconData icon, VoidCallback onTap) {
 
 Widget _buildBookList(List<Book> books) {
   return SizedBox(
-    height: 220,
+    height: 308,
     child: ListView.builder(
       scrollDirection: Axis.horizontal,
-      itemCount: books.length + 2,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: books.length,
       itemBuilder: (context, index) {
-        if (index == 0) {
-          return const SizedBox(width: 16);
-        }
-        if (index == books.length + 1) {
-          return const SizedBox(width: 16);
-        }
-        final book = books[index - 1];
-        return BookItem(book: book);
+        final book = books[index];
+        return BookCard(
+          imageUrl: book.coverUrl,
+          title: book.title,
+          author: book.author,
+          onTap: () {},
+        );
       },
     ),
   );
-}
-
-class BookItem extends StatelessWidget {
-  final Book book;
-  static const double bookItemWidth = 130;
-
-  const BookItem({super.key, required this.book});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: bookItemWidth,
-      margin: const EdgeInsets.only(right: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Container(
-                color: Colors.white,
-                child: const Center(
-                  child: Icon(Icons.menu_book, size: 50, color: Colors.grey),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            book.title,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF333333),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            book.author,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF666666)),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
 }
