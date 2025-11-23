@@ -3,6 +3,7 @@ import 'package:me_livrei/constants/app_colors.dart';
 import 'package:me_livrei/widgets/custom_input_field.dart';
 import 'package:me_livrei/constants/validators.dart';
 import 'package:me_livrei/screens/main_screen.dart';
+import 'package:me_livrei/screens/register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -43,9 +44,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _navigateToRegister() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Ir para tela de cadastro')));
+    FocusScope.of(context).unfocus();
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const RegisterScreen()),
+    );
   }
 
   void _showErrorMessage(String message) {
@@ -76,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // --- CABEÇALHO ---
+                  // --- HEADER ---
                   const Text(
                     'Que bom te ver de volta!',
                     style: TextStyle(
