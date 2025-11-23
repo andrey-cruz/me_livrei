@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:me_livrei/screens/main_screen.dart';
+import 'package:me_livrei/screens/login_screen.dart';
 import 'dart:async';
 
 class LoadingScreen extends StatefulWidget {
@@ -13,12 +13,10 @@ class _LoadingScreenState extends State<LoadingScreen> {
   @override
   void initState() {
     super.initState();
-    // Inicia um temporizador de 3 segundos
     Timer(const Duration(seconds: 3), () {
-      // Depois de 3 segundos, troca para a HomeScreen
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainScreen()),
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     });
   }
@@ -33,10 +31,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFD9AD7F),
-              Color(0xFFFDF5E6),
-            ],
+            colors: [Color(0xFFD9AD7F), Color(0xFFFDF5E6)],
           ),
         ),
         child: Column(

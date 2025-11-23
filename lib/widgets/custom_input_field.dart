@@ -13,6 +13,7 @@ class CustomInputField extends StatelessWidget {
   final bool enabled;
   final String? hintText;
   final List<TextInputFormatter>? inputFormatters;
+  final Widget? suffixIcon;
 
   const CustomInputField({
     super.key,
@@ -26,6 +27,7 @@ class CustomInputField extends StatelessWidget {
     this.enabled = true,
     this.hintText,
     this.inputFormatters,
+    this.suffixIcon,
   });
 
   @override
@@ -51,11 +53,14 @@ class CustomInputField extends StatelessWidget {
           obscureText: obscureText,
           validator: validator,
           keyboardType: maxLines > 1 ? TextInputType.multiline : keyboardType,
-          textInputAction: maxLines > 1 ? TextInputAction.newline : textInputAction,
+          textInputAction: maxLines > 1
+              ? TextInputAction.newline
+              : textInputAction,
           inputFormatters: inputFormatters,
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: const TextStyle(color: AppColors.cinzaPoeira),
+            suffixIcon: suffixIcon,
             border: const OutlineInputBorder(),
             enabledBorder: const OutlineInputBorder(
               borderSide: BorderSide(color: AppColors.carvaoSuave, width: 0.5),
