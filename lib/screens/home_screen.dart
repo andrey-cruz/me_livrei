@@ -19,6 +19,9 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = true;
   String? _error;
 
+  // Controller de busca (visual por enquanto)
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -65,26 +68,41 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ... (O código da barra de pesquisa continua igual) ...
+            // --- BARRA DE PESQUISA (Design Original) ---
             Padding(
               padding: const EdgeInsets.fromLTRB(31, 81, 74, 43),
               child: SizedBox(
                 width: 306,
                 height: 51,
                 child: TextField(
+                  controller: _searchController,
                   cursorColor: AppColors.cinzaPoeira,
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(width: 0.5, color: AppColors.carvaoSuave)),
+                      borderRadius: BorderRadius.circular(4),
+                      borderSide: const BorderSide(
+                        width: 0.5,
+                        color: AppColors.carvaoSuave,
+                      ),
+                    ),
                     enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(width: 0.5, color: AppColors.carvaoSuave)),
+                      borderRadius: BorderRadius.circular(4),
+                      borderSide: const BorderSide(
+                        width: 0.5,
+                        color: AppColors.carvaoSuave,
+                      ),
+                    ),
                     focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(4),
-                        borderSide: const BorderSide(width: 0.5, color: AppColors.carvaoSuave)),
-                    prefixIcon:
-                    const Icon(Icons.search, color: AppColors.cinzaPoeira),
+                      borderRadius: BorderRadius.circular(4),
+                      borderSide: const BorderSide(
+                        width: 0.5,
+                        color: AppColors.carvaoSuave,
+                      ),
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: AppColors.cinzaPoeira,
+                    ),
                     hintText: 'Pesquisar por títulos, autores...',
                     hintStyle: const TextStyle(color: AppColors.cinzaPoeira),
                     filled: true,
@@ -94,88 +112,126 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
+            // --- LOADING / ERRO ---
             if (_isLoading)
               const Center(
                 child: Padding(
                   padding: EdgeInsets.all(50),
-                  child: CircularProgressIndicator(color: AppColors.terracotaQueimado),
+                  child: CircularProgressIndicator(
+                    color: AppColors.terracotaQueimado,
+                  ),
                 ),
               )
             else if (_error != null)
-            // ... (O tratamento de erro continua igual) ...
               Center(
                 child: Text('Erro: $_error'),
               )
-            else if (_allBooks.isEmpty)
-              // ... (O tratamento de lista vazia continua igual) ...
-                const Center(child: Text('Nenhum livro'))
-              else ...[
-                  // Destaques
-                  _sectionHeader(
-                    'Em destaque',
-                    Icons.star_border,
-                    AppColors.ambarQuente,
-                    onSeeAll: () {
-                      // Passando apenas os 5 primeiros como destaque
-                      _navigateToBookList('Em Destaque', _allBooks.take(5).toList());
-                    },
+            else ...[
+                // ======================================================
+                // SEÇÃO 1: DESTAQUES
+                // ======================================================
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(32, 0, 124, 16),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.show_chart,
+                        size: 24,
+                        color: AppColors.terracotaQueimado,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Destaque do Me Livrei',
+                        style: TextStyle(
+                          color: AppColors.carvaoSuave,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
-                  _buildBookCarousel(_allBooks.take(5).toList()),
-                  const SizedBox(height: 12),
-                  // Todos os Livros
-                  _sectionHeader(
-                    'Todos os livros',
-                    Icons.book_outlined,
-                    AppColors.verdeMusgo,
-                    onSeeAll: () {
-                      // Passando a lista completa
-                      _navigateToBookList('Todos os Livros', _allBooks);
-                    },
+                ),
+
+                // CARROSSEL DESTAQUES
+                _buildBookCarousel(
+                  _allBooks.take(5).toList(),
+                  emptyMessage: 'Nenhum destaque no momento',
+                ),
+
+                // ======================================================
+                // SEÇÃO 2: INTERESSES
+                // ======================================================
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(32, 36, 124, 16),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.bookmark_add,
+                        size: 24,
+                        color: AppColors.terracotaQueimado,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Meus Interesses', // Texto original
+                        style: TextStyle(
+                          color: AppColors.carvaoSuave,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
-                  _buildBookCarousel(_allBooks),
-                  // Espaço extra no final
-                  const SizedBox(height: 30),
-                ],
+                ),
+
+                // CARROSSEL DE TODOS (Usado aqui como exemplo)
+                _buildBookCarousel(
+                  _allBooks,
+                  emptyMessage: 'Nenhum livro cadastrado ainda',
+                ),
+
+                const SizedBox(height: 30),
+              ],
           ],
         ),
       ),
     );
   }
 
-  Widget _sectionHeader(String title, IconData icon, Color color,
-      {VoidCallback? onSeeAll}) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(32, 0, 32, 16),
-      child: Row(
-        children: [
-          Icon(icon, size: 24, color: color),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              color: AppColors.carvaoSuave,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const Spacer(),
-          if (onSeeAll != null)
-            GestureDetector(
-              onTap: onSeeAll,
-              child: const Text(
-                'Ver todos',
-                style: TextStyle(
-                  color: AppColors.terracotaQueimado,
-                  fontSize: 14,
-                ),
+  // --- MÉTODO DO CARROSSEL ---
+  Widget _buildBookCarousel(List<Book> books, {String emptyMessage = 'Nenhum livro'}) {
+
+    // SE ESTIVER VAZIO: Mostra placeholder com a MESMA ALTURA do card (308)
+    if (books.isEmpty) {
+      return Container(
+        // CORRIGIDO: Altura igual à da lista de livros
+        height: 308,
+        width: double.infinity,
+        alignment: Alignment.center,
+        margin: const EdgeInsets.symmetric(horizontal: 32),
+        decoration: BoxDecoration(
+          color: Colors.grey[200], // Fundo cinza claro
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.cinzaPoeira.withOpacity(0.3)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.menu_book, size: 40, color: AppColors.cinzaPoeira),
+            const SizedBox(height: 8),
+            Text(
+              emptyMessage,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.cinzaPoeira,
+                fontSize: 14,
               ),
             ),
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+      );
+    }
 
-  Widget _buildBookCarousel(List<Book> books) {
+    // SE TIVER LIVROS: Mostra a lista normal
     return SizedBox(
       height: 308,
       child: ListView.builder(

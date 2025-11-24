@@ -7,7 +7,7 @@ import '../widgets/book_card.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../services/book_service.dart';
-import '../services/interest_service.dart'; // NOVO IMPORT
+import '../services/interest_service.dart';
 import '../constants/location_helper.dart';
 import 'add_book_screen.dart';
 import 'book_detail_screen.dart';
@@ -25,11 +25,11 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final UserService _userService = UserService();
   final BookService _bookService = BookService();
-  final InterestService _interestService = InterestService(); // NOVO SERVIÇO
+  final InterestService _interestService = InterestService();
 
   UserModel? _currentUser;
   List<Book> _myBooks = [];
-  List<Book> _interestedBooks = []; // NOVA LISTA
+  List<Book> _interestedBooks = [];
   bool _isLoading = true;
   String? _error;
   String _locationText = 'Carregando...';
@@ -53,13 +53,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      // 1. Carregar Usuário
       final user = await _userService.getUser(uid);
-
-      // 2. Carregar Meus Livros (Estante)
       final myBooks = await _bookService.getUserBooks(uid);
-
-      // 3. Carregar Meus Interesses (NOVA LÓGICA)
       final interestedIds = await _interestService.getUserInterestedBookIds(uid);
       final interestedBooks = await _bookService.getBooksByIds(interestedIds);
 
@@ -75,7 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _currentUser = user;
           _myBooks = myBooks;
-          _interestedBooks = interestedBooks; // Atualiza a lista de interesses
+          _interestedBooks = interestedBooks;
           _locationText = location;
           _isLoading = false;
         });
@@ -127,17 +122,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) setState(() => _locationText = loc);
   }
 
-  // LÓGICA DE CONSTRUÇÃO DA LISTA (Atualizada)
   Widget _buildBookList(List<Book> books, {required bool isMyShelf}) {
     if (books.isEmpty) {
+      String emptyMessage = isMyShelf
+          ? 'Você ainda não cadastrou livros'
+          : 'Você ainda não demonstrou interesse';
+
       return Container(
-        height: 100,
+        height: 308,
+        width: double.infinity,
         alignment: Alignment.center,
-        child: Text(
-          isMyShelf
-              ? 'Você ainda não cadastrou livros.'
-              : 'Você ainda não demonstrou interesse.',
-          style: const TextStyle(color: Colors.grey),
+        margin: const EdgeInsets.symmetric(horizontal: 32),
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.cinzaPoeira.withOpacity(0.3)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.menu_book, size: 40, color: AppColors.cinzaPoeira),
+            const SizedBox(height: 8),
+            Text(
+              emptyMessage,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.cinzaPoeira,
+                fontSize: 14,
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -160,11 +174,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 MaterialPageRoute(
                   builder: (context) => BookDetailScreen(
                     book: book,
-                    isOwner: isMyShelf, // Se for minha estante, sou dono. Se for interesse, não.
+                    isOwner: isMyShelf,
                   ),
                 ),
               );
-              // Recarrega os dados ao voltar (para atualizar caso tenha removido interesse)
               if (mounted) _loadUserData();
             },
           );
@@ -222,9 +235,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _loadUserData();
           }
         },
-        backgroundColor: const Color(0xFFEC5641),
+        // --- COR ALTERADA PARA DAR CONTRASTE (MARROM) ---
+        backgroundColor: const Color(0xFF3E2723),
         shape: const CircleBorder(),
-        child: const Icon(Icons.add, size: 36, color: AppColors.begePapel),
+        child: const Icon(Icons.add, size: 36, color: Colors.white),
       ),
       body: CustomScrollView(
         slivers: [
@@ -232,10 +246,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             expandedHeight: 250.0,
             floating: false,
             pinned: true,
-            backgroundColor: const Color(0xFFFBF8F1),
+            backgroundColor: AppColors.terracotaQueimado,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                color: const Color(0xFFEC5641),
+                color: AppColors.terracotaQueimado,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -315,7 +329,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           SliverList(
             delegate: SliverChildListDelegate([
-              // MINHA ESTANTE
               _buildSectionHeader(
                 'Minha estante',
                 Icons.bookmark_border,
@@ -333,7 +346,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               _buildBookList(_myBooks, isMyShelf: true),
 
-              // MEUS INTERESSES
               _buildSectionHeader('Meus interesses', Icons.star_border, () {
                 Navigator.push(
                   context,
@@ -356,7 +368,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-// Widgets Auxiliares
 Widget _buildStatColumn(String count, String label) {
   return Container(
     width: 100,
@@ -371,14 +382,14 @@ Widget _buildStatColumn(String count, String label) {
         Text(
           count,
           style: const TextStyle(
-            color: Color(0xFFEC5641),
+            color: AppColors.terracotaQueimado,
             fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
         Text(
           label,
-          style: const TextStyle(color: Color(0xFFEC5641), fontSize: 10),
+          style: const TextStyle(color: AppColors.terracotaQueimado, fontSize: 10),
         ),
       ],
     ),
@@ -390,7 +401,7 @@ Widget _buildSectionHeader(String title, IconData icon, VoidCallback onTap) {
     padding: const EdgeInsets.all(16.0),
     child: Row(
       children: [
-        Icon(icon, color: const Color(0xFFEC5641)),
+        Icon(icon, color: AppColors.terracotaQueimado),
         const SizedBox(width: 8),
         Text(
           title,
@@ -405,7 +416,7 @@ Widget _buildSectionHeader(String title, IconData icon, VoidCallback onTap) {
           onTap: onTap,
           child: const Text(
             'Ver Todos',
-            style: TextStyle(color: Color(0xFFEC5641), fontSize: 14),
+            style: TextStyle(color: AppColors.terracotaQueimado, fontSize: 14),
           ),
         ),
       ],
