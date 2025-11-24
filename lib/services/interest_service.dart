@@ -1,39 +1,60 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class InterestService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  static const String _collection = 'interests';
+  final CollectionReference _interestsRef =
+  FirebaseFirestore.instance.collection('interests');
 
+  // 1. DEMONSTRAR INTERESSE
   Future<void> addInterest({
     required String bookId,
     required String bookTitle,
     required String userId,
     required String userName,
     required String userEmail,
-    required String ownerId,
+    required String ownerId, // Dono do livro (para notificar depois)
   }) async {
     try {
-      await _firestore.collection(_collection).add({
+      await _interestsRef.add({
         'bookId': bookId,
         'bookTitle': bookTitle,
         'userId': userId,
         'userName': userName,
         'userEmail': userEmail,
         'ownerId': ownerId,
-        'createdAt': FieldValue.serverTimestamp(),
+        'created_at': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      throw 'Erro ao demonstrar interesse: $e';
+      throw Exception('Erro ao demonstrar interesse: $e');
     }
   }
 
+  // 2. REMOVER INTERESSE (Desmarcar o coração)
+  Future<void> removeInterest({
+    required String userId,
+    required String bookId,
+  }) async {
+    try {
+      // Busca o documento específico onde esse usuário curtiu esse livro
+      final snapshot = await _interestsRef
+          .where('userId', isEqualTo: userId)
+          .where('bookId', isEqualTo: bookId)
+          .get();
+
+      for (var doc in snapshot.docs) {
+        await doc.reference.delete();
+      }
+    } catch (e) {
+      throw Exception('Erro ao remover interesse: $e');
+    }
+  }
+
+  // 3. VERIFICAR SE O USUÁRIO JÁ TEM INTERESSE (Para pintar o coração)
   Future<bool> hasUserInterest({
     required String userId,
     required String bookId,
   }) async {
     try {
-      final snapshot = await _firestore
-          .collection(_collection)
+      final snapshot = await _interestsRef
           .where('userId', isEqualTo: userId)
           .where('bookId', isEqualTo: bookId)
           .limit(1)
@@ -45,78 +66,33 @@ class InterestService {
     }
   }
 
-  Future<void> removeInterest({
-    required String userId,
-    required String bookId,
-  }) async {
-    try {
-      final snapshot = await _firestore
-          .collection(_collection)
-          .where('userId', isEqualTo: userId)
-          .where('bookId', isEqualTo: bookId)
-          .get();
-
-      for (final doc in snapshot.docs) {
-        await doc.reference.delete();
-      }
-    } catch (e) {
-      throw 'Erro ao cancelar interesse: $e';
-    }
-  }
-
-  Future<List<Map<String, dynamic>>> getBookInterests(String bookId) async {
-    try {
-      final snapshot = await _firestore
-          .collection(_collection)
-          .where('bookId', isEqualTo: bookId)
-          .orderBy('createdAt', descending: true)
-          .get();
-
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return {
-          'id': doc.id,
-          'userId': data['userId'] ?? '',
-          'userName': data['userName'] ?? '',
-          'userEmail': data['userEmail'] ?? '',
-          'createdAt': data['createdAt'],
-        };
-      }).toList();
-    } catch (e) {
-      throw 'Erro ao buscar interessados: $e';
-    }
-  }
-
+  // 4. CONTAR QUANTOS INTERESSADOS O LIVRO TEM
   Future<int> getBookInterestCount(String bookId) async {
     try {
-      final snapshot = await _firestore
-          .collection(_collection)
+      final snapshot = await _interestsRef
           .where('bookId', isEqualTo: bookId)
+          .count()
           .get();
 
-      return snapshot.docs.length;
+      return snapshot.count ?? 0;
     } catch (e) {
       return 0;
     }
   }
 
-  Stream<List<Map<String, dynamic>>> streamBookInterests(String bookId) {
-    return _firestore
-        .collection(_collection)
-        .where('bookId', isEqualTo: bookId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) {
+  // 5. LISTAR QUEM SÃO OS INTERESSADOS (Para o dono do livro ver)
+  Future<List<Map<String, dynamic>>> getBookInterests(String bookId) async {
+    try {
+      final snapshot = await _interestsRef
+          .where('bookId', isEqualTo: bookId)
+          .orderBy('created_at', descending: true)
+          .get();
+
       return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return {
-          'id': doc.id,
-          'userId': data['userId'] ?? '',
-          'userName': data['userName'] ?? '',
-          'userEmail': data['userEmail'] ?? '',
-          'createdAt': data['createdAt'],
-        };
+        return doc.data() as Map<String, dynamic>;
       }).toList();
-    });
+    } catch (e) {
+      return [];
+    }
   }
 }

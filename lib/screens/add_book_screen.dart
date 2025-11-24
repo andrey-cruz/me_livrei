@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../constants/app_colors.dart';
-import '../constants/validators.dart';
+import '../constants/validators.dart'; // Certifique-se de ter validadores ou remova
 import '../models/book.dart';
-import '../widgets/custom_input_field.dart';
-import '../widgets/book_genre_dropdown.dart';
 import '../services/auth_service.dart';
 import '../services/book_service.dart';
+import '../widgets/custom_input_field.dart';
+// Se você tiver o dropdown de gênero, importe aqui:
+// import '../widgets/book_genre_dropdown.dart';
 
 class AddBookScreen extends StatefulWidget {
   const AddBookScreen({super.key});
@@ -16,91 +17,83 @@ class AddBookScreen extends StatefulWidget {
 }
 
 class _AddBookScreenState extends State<AddBookScreen> {
-  // Controllers
-  final TextEditingController _coverUrlController = TextEditingController();
-  final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _authorController = TextEditingController();
-  final TextEditingController _publisherController = TextEditingController();
-  final TextEditingController _conditionController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-
-  // Form e Services
   final _formKey = GlobalKey<FormState>();
   final BookService _bookService = BookService();
 
-  // Estado
-  bool _isLoading = false;
+  // Controllers
+  final _titleController = TextEditingController();
+  final _authorController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _coverUrlController = TextEditingController();
+  final _publisherController = TextEditingController();
+  final _conditionController = TextEditingController(); // Ex: Novo, Usado
+
+  // Se não tiver dropdown de genero ainda, use controller ou string
   String? _selectedGenre;
+  final List<String> _genres = ['Ficção', 'Romance', 'Técnico', 'Infantil', 'Outro'];
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
-    _coverUrlController.dispose();
     _titleController.dispose();
     _authorController.dispose();
+    _descriptionController.dispose();
+    _coverUrlController.dispose();
     _publisherController.dispose();
     _conditionController.dispose();
-    _descriptionController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleSaveBook() async {
-    // Validar formulário
-    final errors = BookValidator.validateBookForm(
-      title: _titleController.text,
-      author: _authorController.text,
-      description: _descriptionController.text,
-      coverUrl: _coverUrlController.text,
-      publisher: _publisherController.text,
-      genre: _selectedGenre ?? '',
-      condition: _conditionController.text,
-    );
-
-    if (!FormUtils.isFormValid(errors)) {
-      _formKey.currentState!.validate();
-      return;
-    }
+  Future<void> _handleSave() async {
+    // 1. Valida o formulário
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
+      // 2. Pega o ID do usuário logado (Dono do livro)
       final authService = Provider.of<AuthService>(context, listen: false);
-      final uid = authService.currentUserId;
+      final userId = authService.currentUserId;
 
-      if (uid == null) {
-        _showErrorMessage('Erro: usuário não autenticado');
-        return;
+      if (userId == null) {
+        throw Exception('Usuário não está logado');
       }
 
+      // 3. Cria o Objeto Book (O "Pacote")
       final newBook = Book(
-        id: '',
-        userId: uid,
+        userId: userId,
         title: _titleController.text.trim(),
         author: _authorController.text.trim(),
-        publisher: _publisherController.text.trim().isEmpty
-            ? null
-            : _publisherController.text.trim(),
-        genre: _selectedGenre,
-        condition: _conditionController.text.trim().isEmpty
-            ? null
-            : _conditionController.text.trim(),
         description: _descriptionController.text.trim(),
         coverUrl: _coverUrlController.text.trim(),
+        publisher: _publisherController.text.trim(),
+        condition: _conditionController.text.trim(),
+        genre: _selectedGenre ?? 'Outro',
+        status: 'available', // Começa disponível
       );
 
-      await _bookService.createBook(newBook);
+      // 4. Manda para o Serviço (Agora do jeito certo!)
+      await _bookService.addBook(newBook);
 
       if (!mounted) return;
 
-      _showSuccessMessage('Livro cadastrado com sucesso!');
+      // 5. Sucesso e Voltar
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Livro cadastrado com sucesso!'),
+          backgroundColor: AppColors.verdeMusgo,
+        ),
+      );
+      Navigator.pop(context, true); // Retorna true para atualizar a lista anterior
 
-      await Future.delayed(const Duration(milliseconds: 500));
-
-      if (mounted) {
-        Navigator.pop(context, true);
-      }
     } catch (e) {
-      if (!mounted) return;
-      _showErrorMessage('Erro ao cadastrar livro: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao cadastrar: $e'),
+          backgroundColor: AppColors.bordoLiterario,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -108,35 +101,21 @@ class _AddBookScreenState extends State<AddBookScreen> {
     }
   }
 
-  void _showSuccessMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
-
-  void _showErrorMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF8F1),
       appBar: AppBar(
-        title: const Text('Adicionar Livro'),
-        backgroundColor: const Color(0xFF622D23),
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Cadastrar Livro',
+          style: TextStyle(color: AppColors.carvaoSuave, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: AppColors.marfimAntigo,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: AppColors.carvaoSuave),
       ),
+      backgroundColor: AppColors.marfimAntigo,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24.0),
         child: Form(
           key: _formKey,
           child: Column(
@@ -146,19 +125,23 @@ class _AddBookScreenState extends State<AddBookScreen> {
               CustomInputField(
                 label: 'URL da Capa*',
                 controller: _coverUrlController,
+                hintText: 'https://exemplo.com/imagem.jpg',
                 enabled: !_isLoading,
-                hintText: 'https://exemplo.com/capa.jpg',
-                validator: BookValidator.validateBookCoverUrl,
+                validator: (value) {
+                  if (value == null || value.isEmpty) return 'Campo obrigatório';
+                  if (!value.startsWith('http')) return 'Insira um link válido';
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
 
               // TÍTULO
               CustomInputField(
-                label: 'Título*',
+                label: 'Título do Livro*',
                 controller: _titleController,
-                enabled: !_isLoading,
                 hintText: 'Ex: O Pequeno Príncipe',
-                validator: BookValidator.validateBookTitle,
+                enabled: !_isLoading,
+                validator: (value) => value!.isEmpty ? 'Campo obrigatório' : null,
               ),
               const SizedBox(height: 16),
 
@@ -166,9 +149,9 @@ class _AddBookScreenState extends State<AddBookScreen> {
               CustomInputField(
                 label: 'Autor*',
                 controller: _authorController,
-                enabled: !_isLoading,
                 hintText: 'Ex: Antoine de Saint-Exupéry',
-                validator: BookValidator.validateBookAuthor,
+                enabled: !_isLoading,
+                validator: (value) => value!.isEmpty ? 'Campo obrigatório' : null,
               ),
               const SizedBox(height: 16),
 
@@ -176,67 +159,86 @@ class _AddBookScreenState extends State<AddBookScreen> {
               CustomInputField(
                 label: 'Editora',
                 controller: _publisherController,
+                hintText: 'Ex: Agir',
                 enabled: !_isLoading,
-                hintText: 'Ex: Companhia das Letras',
-                validator: BookValidator.validateBookPublisher,
               ),
               const SizedBox(height: 16),
 
-              // GÊNERO - DROPDOWN
-              BookGenreDropdown(
-                selectedGenre: _selectedGenre,
-                onChanged: (value) {
-                  setState(() => _selectedGenre = value);
-                },
-                enabled: !_isLoading,
+              // GÊNERO (Dropdown simples)
+              const Text(
+                'Gênero',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.carvaoSuave,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.brancoCreme,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.carvaoSuave, width: 0.5),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _selectedGenre,
+                    hint: const Text('Selecione um gênero'),
+                    isExpanded: true,
+                    onChanged: _isLoading ? null : (String? newValue) {
+                      setState(() {
+                        _selectedGenre = newValue;
+                      });
+                    },
+                    items: _genres.map<DropdownMenuItem<String>>((String value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
 
               // CONDIÇÃO
               CustomInputField(
-                label: 'Condição',
+                label: 'Condição do Livro',
                 controller: _conditionController,
+                hintText: 'Ex: Usado, Novo, Com rasuras...',
                 enabled: !_isLoading,
-                hintText: 'Ex: Novo, Usado, Bom estado',
-                validator: BookValidator.validateBookCondition,
               ),
               const SizedBox(height: 16),
 
               // DESCRIÇÃO
               CustomInputField(
-                label: 'Descrição*',
+                label: 'Descrição / Sinopse*',
                 controller: _descriptionController,
-                enabled: !_isLoading,
                 hintText: 'Conte um pouco sobre o livro...',
-                maxLines: 5,
-                validator: BookValidator.validateBookDescription,
+                enabled: !_isLoading,
+                maxLines: 4,
+                validator: (value) => value!.isEmpty ? 'Campo obrigatório' : null,
               ),
               const SizedBox(height: 32),
 
               // BOTÃO SALVAR
               SizedBox(
-                height: 56,
+                height: 50,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleSaveBook,
+                  onPressed: _isLoading ? null : _handleSave,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFEC5641),
+                    backgroundColor: AppColors.terracotaQueimado,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                   child: _isLoading
-                      ? const SizedBox(
-                    height: 24,
-                    width: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
+                      ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
                     'Cadastrar Livro',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
