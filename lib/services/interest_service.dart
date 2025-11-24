@@ -11,7 +11,7 @@ class InterestService {
     required String userId,
     required String userName,
     required String userEmail,
-    required String ownerId, // Dono do livro (para notificar depois)
+    required String ownerId,
   }) async {
     try {
       await _interestsRef.add({
@@ -28,13 +28,12 @@ class InterestService {
     }
   }
 
-  // 2. REMOVER INTERESSE (Desmarcar o coração)
+  // 2. REMOVER INTERESSE
   Future<void> removeInterest({
     required String userId,
     required String bookId,
   }) async {
     try {
-      // Busca o documento específico onde esse usuário curtiu esse livro
       final snapshot = await _interestsRef
           .where('userId', isEqualTo: userId)
           .where('bookId', isEqualTo: bookId)
@@ -48,7 +47,7 @@ class InterestService {
     }
   }
 
-  // 3. VERIFICAR SE O USUÁRIO JÁ TEM INTERESSE (Para pintar o coração)
+  // 3. VERIFICAR SE O USUÁRIO JÁ TEM INTERESSE
   Future<bool> hasUserInterest({
     required String userId,
     required String bookId,
@@ -80,7 +79,7 @@ class InterestService {
     }
   }
 
-  // 5. LISTAR QUEM SÃO OS INTERESSADOS (Para o dono do livro ver)
+  // 5. LISTAR QUEM SÃO OS INTERESSADOS
   Future<List<Map<String, dynamic>>> getBookInterests(String bookId) async {
     try {
       final snapshot = await _interestsRef
@@ -91,6 +90,20 @@ class InterestService {
       return snapshot.docs.map((doc) {
         return doc.data() as Map<String, dynamic>;
       }).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // 6. BUSCAR IDs DOS LIVROS QUE O USUÁRIO CURTIU (NOVO)
+  Future<List<String>> getUserInterestedBookIds(String userId) async {
+    try {
+      final snapshot = await _interestsRef
+          .where('userId', isEqualTo: userId)
+          .orderBy('created_at', descending: true)
+          .get();
+
+      return snapshot.docs.map((doc) => doc['bookId'] as String).toList();
     } catch (e) {
       return [];
     }

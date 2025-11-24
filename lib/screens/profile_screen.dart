@@ -7,6 +7,7 @@ import '../widgets/book_card.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../services/book_service.dart';
+import '../services/interest_service.dart'; // NOVO IMPORT
 import '../constants/location_helper.dart';
 import 'add_book_screen.dart';
 import 'book_detail_screen.dart';
@@ -24,9 +25,11 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final UserService _userService = UserService();
   final BookService _bookService = BookService();
+  final InterestService _interestService = InterestService(); // NOVO SERVIÇO
 
   UserModel? _currentUser;
   List<Book> _myBooks = [];
+  List<Book> _interestedBooks = []; // NOVA LISTA
   bool _isLoading = true;
   String? _error;
   String _locationText = 'Carregando...';
@@ -50,8 +53,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
+      // 1. Carregar Usuário
       final user = await _userService.getUser(uid);
-      final books = await _bookService.getUserBooks(uid);
+
+      // 2. Carregar Meus Livros (Estante)
+      final myBooks = await _bookService.getUserBooks(uid);
+
+      // 3. Carregar Meus Interesses (NOVA LÓGICA)
+      final interestedIds = await _interestService.getUserInterestedBookIds(uid);
+      final interestedBooks = await _bookService.getBooksByIds(interestedIds);
 
       String location = 'Brasil';
       if (user != null) {
@@ -64,7 +74,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) {
         setState(() {
           _currentUser = user;
-          _myBooks = books;
+          _myBooks = myBooks;
+          _interestedBooks = interestedBooks; // Atualiza a lista de interesses
           _locationText = location;
           _isLoading = false;
         });
@@ -94,12 +105,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // --- FUNÇÃO DE NAVEGAÇÃO PARA EDITAR ---
   void _navigateToEditProfile() async {
-    // Segurança: Só navega se o usuário estiver carregado
     if (_currentUser == null) return;
-
-    // Aguarda o retorno da tela de edição
     final updatedUser = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -107,11 +114,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    // Se voltou com um usuário atualizado, atualiza a tela
     if (updatedUser != null && updatedUser is UserModel) {
       setState(() {
         _currentUser = updatedUser;
-        // Atualiza localização também se necessário
         _updateLocationText(updatedUser);
       });
     }
@@ -122,7 +127,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) setState(() => _locationText = loc);
   }
 
-  Widget _buildBookList(List<Book> books) {
+  // LÓGICA DE CONSTRUÇÃO DA LISTA (Atualizada)
+  Widget _buildBookList(List<Book> books, {required bool isMyShelf}) {
+    if (books.isEmpty) {
+      return Container(
+        height: 100,
+        alignment: Alignment.center,
+        child: Text(
+          isMyShelf
+              ? 'Você ainda não cadastrou livros.'
+              : 'Você ainda não demonstrou interesse.',
+          style: const TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
     return SizedBox(
       height: 308,
       child: ListView.builder(
@@ -141,11 +160,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 MaterialPageRoute(
                   builder: (context) => BookDetailScreen(
                     book: book,
-                    isOwner: true, // Dono
+                    isOwner: isMyShelf, // Se for minha estante, sou dono. Se for interesse, não.
                   ),
                 ),
               );
-              // Recarrega os dados quando voltar (caso tenha deletado/editado)
+              // Recarrega os dados ao voltar (para atualizar caso tenha removido interesse)
               if (mounted) _loadUserData();
             },
           );
@@ -153,7 +172,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
-  // ============================================
 
   @override
   Widget build(BuildContext context) {
@@ -251,7 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 .length
                                 .toString(),
                             'Livrados'),
-                        _buildStatColumn('0', 'Interesses'),
+                        _buildStatColumn(_interestedBooks.length.toString(), 'Interesses'),
                       ],
                     ),
                   ],
@@ -297,6 +315,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           SliverList(
             delegate: SliverChildListDelegate([
+              // MINHA ESTANTE
               _buildSectionHeader(
                 'Minha estante',
                 Icons.bookmark_border,
@@ -312,19 +331,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
               ),
-              _buildBookList(_myBooks), // Agora funciona perfeitamente!
+              _buildBookList(_myBooks, isMyShelf: true),
+
+              // MEUS INTERESSES
               _buildSectionHeader('Meus interesses', Icons.star_border, () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const BooksListScreen(
+                    builder: (context) => BooksListScreen(
                       title: 'Meus Interesses',
-                      books: [],
+                      books: _interestedBooks,
                     ),
                   ),
                 );
               }),
-              _buildBookList(_myBooks),
+              _buildBookList(_interestedBooks, isMyShelf: false),
+
               const SizedBox(height: 80),
             ]),
           ),
@@ -334,6 +356,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
+// Widgets Auxiliares
 Widget _buildStatColumn(String count, String label) {
   return Container(
     width: 100,
