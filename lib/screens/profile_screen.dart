@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../Constants/app_colors.dart';
-import '../models/Book.dart';
+import '../models/book.dart';
 import '../models/user.dart';
 import '../widgets/book_card.dart';
 import 'package:provider/provider.dart';

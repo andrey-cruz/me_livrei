@@ -4,7 +4,7 @@ import '../widgets/Custom_dropdowns.dart';
 import '../constants/validators.dart';
 import '../constants/app_colors.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import '../constants/delet_account_dialog.dart';
+import '../constants/delete_account_dialog.dart';
 import '../models/user.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';

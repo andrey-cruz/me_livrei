@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:me_livrei/constants/app_colors.dart';
 import 'package:me_livrei/widgets/book_card.dart';
-import '../models/Book.dart';
+import '../models/book.dart';
 import '../services/book_service.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';

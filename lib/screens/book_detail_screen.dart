@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:me_livrei/models/Book.dart';
+import 'package:me_livrei/models/book.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';

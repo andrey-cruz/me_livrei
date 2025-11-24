@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/validators.dart';
-import '../models/Book.dart';
+import '../models/book.dart';
 import '../widgets/custom_input_field.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
