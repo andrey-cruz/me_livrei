@@ -110,3 +110,19 @@ migrate_working_dir/
 # =================================
 **/flutter_*.png
 **/flutter_*.ico
+
+# =========================
+# FIREBASE & SEGURANÇA
+# =========================
+# Configuração do Flutter
+lib/firebase_options.dart
+
+# Configuração do Android
+android/app/google-services.json
+
+# Configuração do iOS e macOS (caso use no futuro)
+ios/Runner/GoogleService-Info.plist
+macos/Runner/GoogleService-Info.plist
+
+# Configuração Web (caso use)
+web/firebase-config.js
