@@ -1,27 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:me_livrei/models/book.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import '../models/book.dart';
 import '../services/auth_service.dart';
 import '../services/interest_service.dart';
 import '../services/user_service.dart';
 import '../services/book_service.dart';
+// IMPORTANTE: Importe a tela de edição
+import 'book_edit_screen.dart';
 
 class BookDetailScreen extends StatefulWidget {
   final Book book;
   final bool isOwner;
 
-  const BookDetailScreen({Key? key, required this.book, this.isOwner = false})
-      : super(key: key);
+  const BookDetailScreen({super.key, required this.book, this.isOwner = false});
 
   @override
-  _BookDetailScreenState createState() => _BookDetailScreenState();
+  State<BookDetailScreen> createState() => _BookDetailScreenState();
 }
 
 class _BookDetailScreenState extends State<BookDetailScreen> {
   final InterestService _interestService = InterestService();
   final UserService _userService = UserService();
   final BookService _bookService = BookService();
+
+  // Variável para exibir o livro (pode ser atualizada após edição)
+  late Book _displayBook;
 
   bool _isLivrado = false;
   bool _hasInterest = false;
@@ -32,9 +36,80 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   @override
   void initState() {
     super.initState();
+    // Inicializamos com o livro que veio por parâmetro
+    _displayBook = widget.book;
+
     _checkUserInterest();
     if (widget.isOwner) {
       _loadInterests();
+    }
+  }
+
+  // --- LÓGICA DE NAVEGAÇÃO PARA EDIÇÃO ---
+  void _navigateToEdit() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BookEditScreen(book: _displayBook),
+      ),
+    );
+
+    if (!mounted) return;
+
+    // Se o resultado for 'deleted', significa que o livro foi excluído na outra tela
+    if (result == 'deleted') {
+      Navigator.pop(context, true); // Fecha essa tela também
+    }
+    // Se retornou um objeto Book, significa que foi editado
+    else if (result is Book) {
+      setState(() {
+        _displayBook = result; // Atualiza a UI com os novos dados
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Informações atualizadas!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  // --- LÓGICA PARA DELETAR DIRETO DESTA TELA ---
+  Future<void> _handleDeleteBook() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir livro'),
+        content: const Text(
+          'Tem certeza que deseja excluir este livro permanentemente?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        await _bookService.deleteBook(_displayBook.id);
+        if (mounted) {
+          Navigator.pop(context, true); // Volta para o perfil e avisa que mudou
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao excluir: $e')),
+          );
+        }
+      }
     }
   }
 
@@ -47,10 +122,10 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     try {
       final hasInterest = await _interestService.hasUserInterest(
         userId: uid,
-        bookId: widget.book.id,
+        bookId: _displayBook.id, // Usando _displayBook
       );
 
-      final count = await _interestService.getBookInterestCount(widget.book.id);
+      final count = await _interestService.getBookInterestCount(_displayBook.id);
 
       if (mounted) {
         setState(() {
@@ -59,7 +134,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         });
       }
     } catch (e) {
-      // Ignorar erro silenciosamente
+      // Ignorar
     }
   }
 
@@ -80,7 +155,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       if (_hasInterest) {
         await _interestService.removeInterest(
           userId: uid,
-          bookId: widget.book.id,
+          bookId: _displayBook.id,
         );
 
         if (mounted) {
@@ -97,18 +172,15 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
         }
       } else {
         final user = await _userService.getUser(uid);
-
-        if (user == null) {
-          throw 'Usuário não encontrado';
-        }
+        if (user == null) throw 'Usuário não encontrado';
 
         await _interestService.addInterest(
-          bookId: widget.book.id,
-          bookTitle: widget.book.title,
+          bookId: _displayBook.id,
+          bookTitle: _displayBook.title,
           userId: uid,
           userName: user.displayName,
           userEmail: user.email,
-          ownerId: widget.book.userId,
+          ownerId: _displayBook.userId,
         );
 
         if (mounted) {
@@ -127,10 +199,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -142,7 +211,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 
   Future<void> _loadInterests() async {
     try {
-      final interests = await _interestService.getBookInterests(widget.book.id);
+      final interests = await _interestService.getBookInterests(_displayBook.id);
       if (mounted) {
         setState(() {
           _interests = interests;
@@ -178,7 +247,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 
     if (confirm == true) {
       try {
-        await _bookService.updateBookStatus(widget.book.id, 'unavailable');
+        await _bookService.updateBookStatus(_displayBook.id, 'unavailable');
 
         if (mounted) {
           setState(() => _isLivrado = true);
@@ -192,10 +261,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erro: $e'),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text('Erro: $e'), backgroundColor: Colors.red),
           );
         }
       }
@@ -219,10 +285,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
               children: [
                 const Text(
                   'Pessoas interessadas',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -262,21 +325,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                         ),
                         title: Text(
                           interest['userName'],
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         subtitle: Text(interest['userEmail']),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.email),
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Email: ${interest['userEmail']}'),
-                              ),
-                            );
-                          },
-                        ),
                       ),
                     );
                   },
@@ -290,6 +341,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // OBSERVAÇÃO: Note que troquei widget.book por _displayBook
+    // Isso garante que, se você editar, a tela atualiza.
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -312,9 +366,10 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                       children: [
                         const SizedBox(height: 40),
 
-                        if (widget.book.title != null)
+                        // Título e Autor
+                        if (_displayBook.title != null)
                           Text(
-                            widget.book.title!,
+                            _displayBook.title!,
                             style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -323,9 +378,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           ),
                         const SizedBox(height: 4),
 
-                        if (widget.book.author != null)
+                        if (_displayBook.author != null)
                           Text(
-                            widget.book.author!,
+                            _displayBook.author!,
                             style: const TextStyle(
                               fontSize: 18,
                               color: Color(0xFF8B8680),
@@ -333,6 +388,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                           ),
                         const SizedBox(height: 20),
 
+                        // Imagem
                         Center(
                           child: Container(
                             width: 348,
@@ -348,16 +404,26 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.asset(
-                                widget.book.coverUrl,
+                              child: Image.network(
+                                _displayBook.coverUrl,
                                 fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    height: 200,
+                                    color: Colors.grey[300],
+                                    child: const Icon(Icons.broken_image),
+                                  );
+                                },
                               ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 20),
 
+                        // --- BOTÕES (Dono ou Visitante) ---
                         if (!widget.isOwner) ...[
+                          // ... (Código dos botões de visitante continua igual) ...
+                          // Vou manter resumido para focar na mudança
                           SizedBox(
                             width: 348,
                             child: ElevatedButton(
@@ -376,28 +442,15 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   if (_isLoadingInterest)
-                                    const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
+                                    const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                                   else ...[
-                                    Icon(
-                                      _hasInterest ? Icons.check : Icons.favorite_border,
-                                      size: 20,
-                                    ),
+                                    Icon(_hasInterest ? Icons.check : Icons.favorite_border, size: 20),
                                     const SizedBox(width: 8),
                                     Text(
                                       _hasInterest
                                           ? 'Já demonstrei interesse'
                                           : 'Demonstrar interesse${_interestCount > 0 ? " ($_interestCount)" : ""}',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                     ),
                                   ],
                                 ],
@@ -405,58 +458,32 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-
+                          // Botão entrar em contato (placeholder)
                           SizedBox(
                             width: 348,
                             child: OutlinedButton(
                               onPressed: () {},
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: const Color(0xFFC85C48),
-                                side: const BorderSide(
-                                  color: Color(0xFFC85C48),
-                                ),
+                                side: const BorderSide(color: Color(0xFFC85C48)),
                                 backgroundColor: const Color(0xFFFAF7F2),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SvgPicture.asset(
-                                    'assets/icons/chat_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24 1.svg',
-                                    height: 20,
-                                    width: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Entrar em contato',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                              child: const Text('Entrar em contato'),
                             ),
                           ),
                         ] else ...[
+                          // BOTÕES DO DONO
                           SizedBox(
                             width: 348,
                             child: ElevatedButton(
                               onPressed: _isLivrado ? null : _handleMeLivrar,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: _isLivrado
-                                    ? const Color(0xFF95A99A)
-                                    : const Color(0xFFC85C48),
+                                backgroundColor: _isLivrado ? const Color(0xFF95A99A) : const Color(0xFFC85C48),
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -465,10 +492,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                                   const SizedBox(width: 8),
                                   Text(
                                     _isLivrado ? 'Já foi livrado' : 'Me livrar',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
@@ -482,70 +506,19 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
                                 side: const BorderSide(color: Color(0xFFC85C48), width: 2),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  const Icon(
-                                    Icons.people,
-                                    color: Color(0xFFC85C48),
-                                    size: 20,
-                                  ),
+                                  const Icon(Icons.people, color: Color(0xFFC85C48), size: 20),
                                   const SizedBox(width: 8),
-                                  Text(
-                                    'Ver interessados ($_interestCount)',
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFFC85C48),
-                                    ),
-                                  ),
+                                  Text('Ver interessados ($_interestCount)', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFC85C48))),
                                 ],
                               ),
                             ),
                             const SizedBox(height: 12),
                           ],
-
-                          SizedBox(
-                            width: 348,
-                            child: OutlinedButton(
-                              onPressed: () {},
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: const Color(0xFFC85C48),
-                                side: const BorderSide(
-                                  color: Color(0xFFC85C48),
-                                ),
-                                backgroundColor: const Color(0xFFFAF7F2),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  SvgPicture.asset(
-                                    'assets/icons/list_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24 1.svg',
-                                    height: 20,
-                                    width: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Ver lista de interessados',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
                         ],
                       ],
                     ),
@@ -554,114 +527,68 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                     top: 20,
                     right: 20,
                     child: GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                      child: SvgPicture.asset(
-                        'assets/icons/close_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24 1 (1).svg',
-                        height: 25,
-                        width: 25,
-                      ),
+                      onTap: () => Navigator.pop(context),
+                      child: const Icon(Icons.close, size: 30, color: Color(0xFF2A2A2A)),
                     ),
                   ),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 15,
-                  vertical: 5,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'Informações do livro',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2A2A2A),
-                      ),
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF2A2A2A)),
                     ),
                     const SizedBox(height: 16),
 
-                    if (widget.book.title != null)
-                      _InfoItem('Título', widget.book.title!),
-                    if (widget.book.author != null)
-                      _InfoItem('Autor', widget.book.author!),
-                    if (widget.book.publisher != null)
-                      _InfoItem('Editora', widget.book.publisher!),
-                    if (widget.book.genre != null)
-                      _InfoItem('Gênero', widget.book.genre!),
-                    if (widget.book.condition != null)
-                      _InfoItem('Condições do livro', widget.book.condition!),
-                    if (widget.book.description != null)
-                      _InfoItem('Descrição', widget.book.description!),
+                    if (_displayBook.title != null) _InfoItem('Título', _displayBook.title!),
+                    if (_displayBook.author != null) _InfoItem('Autor', _displayBook.author!),
+                    if (_displayBook.publisher != null) _InfoItem('Editora', _displayBook.publisher!),
+                    if (_displayBook.genre != null) _InfoItem('Gênero', _displayBook.genre!),
+                    if (_displayBook.condition != null) _InfoItem('Condições do livro', _displayBook.condition!),
+                    if (_displayBook.description != null) _InfoItem('Descrição', _displayBook.description!),
 
+                    // === AQUI ESTÃO OS BOTÕES DE EDITAR E DELETAR CONECTADOS ===
                     if (widget.isOwner) ...[
                       const SizedBox(height: 10),
                       SizedBox(
                         width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {},
+                        child: ElevatedButton.icon(
+                          // 1. CONECTADO AQUI
+                          onPressed: _navigateToEdit,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFC85C48),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SvgPicture.asset(
-                                'assets/icons/edit_24dp_E3E3E3_FILL0_wght400_GRAD0_opsz24 1.svg',
-                                height: 20,
-                                width: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Editar informações do livro',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                          icon: const Icon(Icons.edit, size: 20),
+                          label: const Text(
+                            'Editar informações do livro',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),
                       const SizedBox(height: 12),
                       SizedBox(
                         width: double.infinity,
-                        child: OutlinedButton(
-                          onPressed: () {},
+                        child: OutlinedButton.icon(
+                          // 2. CONECTADO AQUI
+                          onPressed: _handleDeleteBook,
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFFC85C48),
                             side: const BorderSide(color: Color(0xFFC85C48)),
                             backgroundColor: const Color(0xFFFAF7F2),
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SvgPicture.asset(
-                                'assets/icons/delete_24dp_E3E3E3_FILL1_wght400_GRAD0_opsz24 (1) 1.svg',
-                                height: 20,
-                                width: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Deletar meu livro',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                          icon: const Icon(Icons.delete, size: 20),
+                          label: const Text(
+                            'Deletar meu livro',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),

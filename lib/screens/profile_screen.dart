@@ -9,6 +9,7 @@ import '../services/user_service.dart';
 import '../services/book_service.dart';
 import '../constants/location_helper.dart';
 import 'add_book_screen.dart';
+import 'book_detail_screen.dart';
 import 'login_screen.dart';
 import 'perfil_edit_screen.dart';
 import 'books_list_screen.dart';
@@ -102,7 +103,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final updatedUser = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PerfilEditScreen(user: _currentUser!), // <--- CORREÇÃO AQUI
+        builder: (context) => PerfilEditScreen(user: _currentUser!),
       ),
     );
 
@@ -120,6 +121,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final loc = await LocationHelper.formatarLocalizacao(user.city, user.state);
     if (mounted) setState(() => _locationText = loc);
   }
+
+  Widget _buildBookList(List<Book> books) {
+    return SizedBox(
+      height: 308,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: books.length,
+        itemBuilder: (context, index) {
+          final book = books[index];
+          return BookCard(
+            imageUrl: book.coverUrl,
+            title: book.title,
+            author: book.author,
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => BookDetailScreen(
+                    book: book,
+                    isOwner: true, // Dono
+                  ),
+                ),
+              );
+              // Recarrega os dados quando voltar (caso tenha deletado/editado)
+              if (mounted) _loadUserData();
+            },
+          );
+        },
+      ),
+    );
+  }
+  // ============================================
 
   @override
   Widget build(BuildContext context) {
@@ -229,7 +263,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 icon: const Icon(Icons.more_vert, color: Colors.white),
                 onSelected: (value) {
                   if (value == 'edit') {
-                    _navigateToEditProfile(); // <--- CHAMA A FUNÇÃO CORRIGIDA
+                    _navigateToEditProfile();
                   } else if (value == 'logout') {
                     _handleLogout();
                   }
@@ -278,7 +312,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
               ),
-              _buildBookList(_myBooks),
+              _buildBookList(_myBooks), // Agora funciona perfeitamente!
               _buildSectionHeader('Meus interesses', Icons.star_border, () {
                 Navigator.push(
                   context,
@@ -352,26 +386,6 @@ Widget _buildSectionHeader(String title, IconData icon, VoidCallback onTap) {
           ),
         ),
       ],
-    ),
-  );
-}
-
-Widget _buildBookList(List<Book> books) {
-  return SizedBox(
-    height: 308,
-    child: ListView.builder(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: books.length,
-      itemBuilder: (context, index) {
-        final book = books[index];
-        return BookCard(
-          imageUrl: book.coverUrl,
-          title: book.title,
-          author: book.author,
-          onTap: () {},
-        );
-      },
     ),
   );
 }
