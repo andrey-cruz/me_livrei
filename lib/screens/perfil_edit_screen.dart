@@ -10,16 +10,16 @@ import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 
-class PerfilEditerPage extends StatefulWidget {
+class PerfilEditScreen extends StatefulWidget {
   final UserModel user;
 
-  const PerfilEditerPage({super.key, required this.user});
+  const PerfilEditScreen({super.key, required this.user});
 
   @override
-  State<PerfilEditerPage> createState() => _PerfilEditerPageState();
+  State<PerfilEditScreen> createState() => _PerfilEditScreenState();
 }
 
-class _PerfilEditerPageState extends State<PerfilEditerPage> {
+class _PerfilEditScreenState extends State<PerfilEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final UserService _userService = UserService();
 

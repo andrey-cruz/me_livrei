@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
-import '../Constants/app_colors.dart';
+import 'package:provider/provider.dart';
+import '../constants/app_colors.dart';
 import '../models/book.dart';
 import '../models/user.dart';
 import '../widgets/book_card.dart';
-import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../services/book_service.dart';
 import '../constants/location_helper.dart';
 import 'add_book_screen.dart';
+import 'login_screen.dart';
+import 'perfil_edit_screen.dart';
+import 'books_list_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,7 +21,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-
   final UserService _userService = UserService();
   final BookService _bookService = BookService();
 
@@ -40,7 +42,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final uid = authService.currentUserId;
 
       if (uid == null) {
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+              (route) => false,
+        );
         return;
       }
 
@@ -73,12 +78,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  void _handleLogout() async {
+    try {
+      await Provider.of<AuthService>(context, listen: false).signOut();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao sair: $e')),
+      );
+    }
+  }
+
+  // --- FUNÇÃO DE NAVEGAÇÃO PARA EDITAR ---
+  void _navigateToEditProfile() async {
+    // Segurança: Só navega se o usuário estiver carregado
+    if (_currentUser == null) return;
+
+    // Aguarda o retorno da tela de edição
+    final updatedUser = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PerfilEditScreen(user: _currentUser!), // <--- CORREÇÃO AQUI
+      ),
+    );
+
+    // Se voltou com um usuário atualizado, atualiza a tela
+    if (updatedUser != null && updatedUser is UserModel) {
+      setState(() {
+        _currentUser = updatedUser;
+        // Atualiza localização também se necessário
+        _updateLocationText(updatedUser);
+      });
+    }
+  }
+
+  Future<void> _updateLocationText(UserModel user) async {
+    final loc = await LocationHelper.formatarLocalizacao(user.city, user.state);
+    if (mounted) setState(() => _locationText = loc);
+  }
+
   @override
   Widget build(BuildContext context) {
-
     if (_isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator( color: AppColors.terracotaQueimado,)),
+        body: Center(
+            child: CircularProgressIndicator(color: AppColors.terracotaQueimado)),
       );
     }
 
@@ -89,24 +137,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.error_outline,
-                size: 60,
-                color: Colors.red,
-              ),
+              const Icon(Icons.error_outline, size: 60, color: Colors.red),
               const SizedBox(height: 16),
-              const Text(
-                'Erro ao carregar perfil',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _error!,
-                textAlign: TextAlign.center,
-              ),
+              Text('Erro: $_error'),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
@@ -131,9 +164,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         onPressed: () async {
           final result = await Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const AddBookScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const AddBookScreen()),
           );
           if (result == true && mounted) {
             _loadUserData();
@@ -141,7 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
         backgroundColor: const Color(0xFFEC5641),
         shape: const CircleBorder(),
-        child: const Icon(Icons.add, size: 36, color: AppColors.begePapel,),
+        child: const Icon(Icons.add, size: 36, color: AppColors.begePapel),
       ),
       body: CustomScrollView(
         slivers: [
@@ -180,7 +211,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         _buildStatColumn(_myBooks.length.toString(), 'Livros'),
-                        _buildStatColumn(_myBooks.where((b) => b.coverUrl.contains('livrado')).length.toString(), 'Livrados'),
+                        _buildStatColumn(
+                            _myBooks
+                                .where((b) => b.coverUrl.contains('livrado'))
+                                .length
+                                .toString(),
+                            'Livrados'),
                         _buildStatColumn('0', 'Interesses'),
                       ],
                     ),
@@ -189,9 +225,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             actions: [
-              IconButton(
+              PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert, color: Colors.white),
-                onPressed: () {},
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _navigateToEditProfile(); // <--- CHAMA A FUNÇÃO CORRIGIDA
+                  } else if (value == 'logout') {
+                    _handleLogout();
+                  }
+                },
+                itemBuilder: (BuildContext context) {
+                  return [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit, color: AppColors.carvaoSuave),
+                          SizedBox(width: 8),
+                          Text('Editar Perfil'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'logout',
+                      child: Row(
+                        children: [
+                          Icon(Icons.exit_to_app, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Sair', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ];
+                },
               ),
             ],
           ),
@@ -200,10 +266,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _buildSectionHeader(
                 'Minha estante',
                 Icons.bookmark_border,
-                () {},
+                    () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BooksListScreen(
+                        title: 'Minha Estante',
+                        books: _myBooks,
+                      ),
+                    ),
+                  );
+                },
               ),
               _buildBookList(_myBooks),
-              _buildSectionHeader('Meus interesses', Icons.star_border, () {}),
+              _buildSectionHeader('Meus interesses', Icons.star_border, () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BooksListScreen(
+                      title: 'Meus Interesses',
+                      books: [],
+                    ),
+                  ),
+                );
+              }),
               _buildBookList(_myBooks),
               const SizedBox(height: 80),
             ]),
