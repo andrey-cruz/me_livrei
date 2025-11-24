@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+import '../Constants/app_colors.dart';
 import '../models/Book.dart';
+import '../models/user.dart';
 import '../widgets/book_card.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import '../services/user_service.dart';
+import '../services/book_service.dart';
+import '../constants/location_helper.dart';
+import 'add_book_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -11,51 +19,129 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
 
-  final List<Book> myBooks = [
-    Book(
-      id: '1',
-      userId: '1',
-      title: 'O Pequeno Príncipe',
-      author: 'Antoine de Saint-Exupéry',
-      description: 'abc',
-      coverUrl: 'https://m.media-amazon.com/images/I/81QluJ4QXyL._SY425_.jpg',
-    ),
-    Book(
-      id: '2',
-      userId: '2',
-      title: 'Maze Runner: Correr ou Morrer',
-      author: 'James Dashner',
-      description: 'abc',
-      coverUrl: 'https://m.media-amazon.com/images/I/51UqHWh58-L._SY445_SX342_ML2_.jpg',
-    ),
-    Book(
-      id: '3',
-      userId: '3',
-      title: '1984',
-      author: 'George Orwell',
-      description: 'abc',
-      coverUrl: 'https://m.media-amazon.com/images/I/61t0bwt1s3L._SY425_.jpg',
-    ),
-    Book(
-      id: '4',
-      userId: '4',
-      title: 'Fahrenheit 451',
-      author: 'Ray Bradbury',
-      description: 'abc',
-      coverUrl: 'https://m.media-amazon.com/images/I/51tAD6LyZ-L._SY466_.jpg',
-    ),
-  ];
+  final UserService _userService = UserService();
+  final BookService _bookService = BookService();
+
+  UserModel? _currentUser;
+  List<Book> _myBooks = [];
+  bool _isLoading = true;
+  String? _error;
+  String _locationText = 'Carregando...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final uid = authService.currentUserId;
+
+      if (uid == null) {
+        Navigator.pushReplacementNamed(context, '/login');
+        return;
+      }
+
+      final user = await _userService.getUser(uid);
+      final books = await _bookService.getUserBooks(uid);
+
+      String location = 'Brasil';
+      if (user != null) {
+        location = await LocationHelper.formatarLocalizacao(
+          user.city,
+          user.state,
+        );
+      }
+
+      if (mounted) {
+        setState(() {
+          _currentUser = user;
+          _myBooks = books;
+          _locationText = location;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator( color: AppColors.terracotaQueimado,)),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFBF8F1),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 60,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Erro ao carregar perfil',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _isLoading = true;
+                    _error = null;
+                  });
+                  _loadUserData();
+                },
+                child: const Text('Tentar novamente'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFFBF8F1),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddBookScreen(),
+            ),
+          );
+          if (result == true && mounted) {
+            _loadUserData();
+          }
+        },
         backgroundColor: const Color(0xFFEC5641),
         shape: const CircleBorder(),
-        child: const Icon(Icons.add, size: 36),
+        child: const Icon(Icons.add, size: 36, color: AppColors.begePapel,),
       ),
       body: CustomScrollView(
         slivers: [
@@ -71,31 +157,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const SizedBox(height: 50),
-                    const Text(
-                      'Florianópolis, SC • Brasil',
-                      style: TextStyle(color: Colors.white, fontSize: 14),
+                    Text(
+                      _locationText,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
                     ),
                     const SizedBox(height: 8),
-                    const Text(
-                      'Andrey Cruz',
-                      style: TextStyle(
+                    Text(
+                      _currentUser?.displayName ?? 'Usuário',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      '@andrey.mcruz',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                    Text(
+                      '@${_currentUser?.username ?? ''}',
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
                     ),
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        _buildStatColumn('99', 'LIVROS'),
-                        _buildStatColumn('99', 'INTERESSES'),
-                        _buildStatColumn('99', 'TROCAS'),
+                        _buildStatColumn(_myBooks.length.toString(), 'Livros'),
+                        _buildStatColumn(_myBooks.where((b) => b.coverUrl.contains('livrado')).length.toString(), 'Livrados'),
+                        _buildStatColumn('0', 'Interesses'),
                       ],
                     ),
                   ],
@@ -116,9 +202,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Icons.bookmark_border,
                 () {},
               ),
-              _buildBookList(myBooks),
+              _buildBookList(_myBooks),
               _buildSectionHeader('Meus interesses', Icons.star_border, () {}),
-              _buildBookList(myBooks),
+              _buildBookList(_myBooks),
               const SizedBox(height: 80),
             ]),
           ),

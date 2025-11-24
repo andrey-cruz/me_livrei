@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import '../Constants/app_colors.dart';
 
 class DeleteAccountDialog extends StatelessWidget {
-  const DeleteAccountDialog({super.key});
+  final VoidCallback? onConfirm;
+
+  const DeleteAccountDialog({
+    super.key,
+    this.onConfirm,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +80,10 @@ class DeleteAccountDialog extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  Navigator.pop(context);
+                  onConfirm?.call();
+                },
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.cinzaPoeira),
                   padding: const EdgeInsets.symmetric(vertical: 14),

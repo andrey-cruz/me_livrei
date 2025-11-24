@@ -6,6 +6,9 @@ import '../constants/app_colors.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../constants/delet_account_dialog.dart';
 import '../models/user.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import '../services/user_service.dart';
 
 class PerfilEditerPage extends StatefulWidget {
   final UserModel user;
@@ -18,6 +21,7 @@ class PerfilEditerPage extends StatefulWidget {
 
 class _PerfilEditerPageState extends State<PerfilEditerPage> {
   final _formKey = GlobalKey<FormState>();
+  final UserService _userService = UserService();
 
   // Controllers
   late TextEditingController _nameController;
@@ -64,13 +68,11 @@ class _PerfilEditerPageState extends State<PerfilEditerPage> {
   }
 
   Future<void> _handleSave() async {
-    // Valida formulário
     if (!_formKey.currentState!.validate()) {
       _showMessage('Por favor, corrija os erros no formulário', isError: true);
       return;
     }
 
-    // Valida dropdowns (opcional - se precisar)
     if (_estadoId == null || _cidadeId == null) {
       _showMessage('Selecione estado e cidade', isError: true);
       return;
@@ -79,12 +81,14 @@ class _PerfilEditerPageState extends State<PerfilEditerPage> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Substituir por sua chamada de API real
-      await Future.delayed(const Duration(seconds: 1));
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final uid = authService.currentUserId;
 
-      if (!mounted) return;
+      if (uid == null) {
+        _showMessage('Erro: usuário não autenticado', isError: true);
+        return;
+      }
 
-      // Criar usuário atualizado
       final updatedUser = widget.user.copyWith(
         fullName: _nameController.text.trim(),
         email: _emailController.text.trim(),
@@ -95,14 +99,21 @@ class _PerfilEditerPageState extends State<PerfilEditerPage> {
         updatedAt: DateTime.now(),
       );
 
+      await _userService.updateUser(uid, updatedUser);
+
+      if (!mounted) return;
+
       _showMessage('Alterações salvas com sucesso!');
 
-      // Voltar com usuário atualizado
-      Navigator.pop(context, updatedUser);
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        Navigator.pop(context, updatedUser);
+      }
 
     } catch (e) {
       if (!mounted) return;
-      _showMessage('Erro ao salvar: $e', isError: true);
+      _showMessage('Erro ao salvar alterações: $e', isError: true);
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -114,7 +125,31 @@ class _PerfilEditerPageState extends State<PerfilEditerPage> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const DeleteAccountDialog(),
+      builder: (_) => DeleteAccountDialog(
+        onConfirm: () async {
+          // AQUI DELETAR A CONTA
+          try {
+            final authService = Provider.of<AuthService>(context, listen: false);
+            final uid = authService.currentUserId;
+
+            if (uid != null) {
+              await _userService.deleteUser(uid);
+              await authService.signOut();
+
+              if (mounted) {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/login',
+                      (route) => false,
+                );
+              }
+            }
+          } catch (e) {
+            if (mounted) {
+              _showMessage('Erro ao deletar conta: $e', isError: true);
+            }
+          }
+        },
+      ),
     );
   }
 

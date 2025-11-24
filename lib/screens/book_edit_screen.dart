@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/validators.dart';
 import '../models/Book.dart';
-import '../widgets/custom_input_field.dart'; // NOVO IMPORT
+import '../widgets/custom_input_field.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import '../services/book_service.dart';
+import '../widgets/book_genre_dropdown.dart';
 
 class BookEditScreen extends StatefulWidget {
   final Book book;
@@ -21,13 +25,15 @@ class _BookEditScreenState extends State<BookEditScreen> {
   late final TextEditingController _titleController;
   late final TextEditingController _authorController;
   late final TextEditingController _publisherController;
-  late final TextEditingController _genreController;
   late final TextEditingController _conditionController;
   late final TextEditingController _descriptionController;
+  final BookService _bookService = BookService();
 
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   bool _hasUnsavedChanges = false;
+
+  String? _selectedGenre;
 
   @override
   void initState() {
@@ -37,7 +43,7 @@ class _BookEditScreenState extends State<BookEditScreen> {
     _titleController = TextEditingController(text: widget.book.title);
     _authorController = TextEditingController(text: widget.book.author);
     _publisherController = TextEditingController(text: widget.book.publisher ?? '');
-    _genreController = TextEditingController(text: widget.book.genre ?? '');
+    _selectedGenre = widget.book.genre;
     _conditionController = TextEditingController(text: widget.book.condition ?? '');
     _descriptionController = TextEditingController(text: widget.book.description);
 
@@ -45,7 +51,6 @@ class _BookEditScreenState extends State<BookEditScreen> {
     _titleController.addListener(_onFieldChanged);
     _authorController.addListener(_onFieldChanged);
     _publisherController.addListener(_onFieldChanged);
-    _genreController.addListener(_onFieldChanged);
     _conditionController.addListener(_onFieldChanged);
     _descriptionController.addListener(_onFieldChanged);
   }
@@ -63,7 +68,7 @@ class _BookEditScreenState extends State<BookEditScreen> {
       description: _descriptionController.text,
       coverUrl: _coverUrlController.text,
       publisher: _publisherController.text,
-      genre: _genreController.text,
+      genre: _selectedGenre ?? '',
       condition: _conditionController.text,
     );
 
@@ -75,16 +80,40 @@ class _BookEditScreenState extends State<BookEditScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
+      final authService = Provider.of<AuthService>(context, listen: false);
+
+      final updatedBook = widget.book;
+      updatedBook.title = _titleController.text.trim();
+      updatedBook.author = _authorController.text.trim();
+      updatedBook.publisher = _publisherController.text.trim().isEmpty
+          ? null
+          : _publisherController.text.trim();
+      updatedBook.genre = _selectedGenre;
+      updatedBook.condition = _conditionController.text.trim().isEmpty
+          ? null
+          : _conditionController.text.trim();
+      updatedBook.description = _descriptionController.text.trim();
+      updatedBook.coverUrl = _coverUrlController.text.trim();
+
+      await _bookService.updateBook(widget.book.id, updatedBook);
 
       if (!mounted) return;
 
       _showSuccessMessage('Livro atualizado com sucesso!');
-      Navigator.pop(context, true);
+
+      setState(() {
+        _hasUnsavedChanges = false;
+      });
+
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        Navigator.pop(context, updatedBook);
+      }
 
     } catch (e) {
       if (!mounted) return;
-      _showErrorMessage('Erro ao salvar livro: $e');
+      _showErrorMessage('Erro ao atualizar livro: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -93,25 +122,55 @@ class _BookEditScreenState extends State<BookEditScreen> {
   }
 
   Future<void> _handleDeleteBook() async {
-    final confirmed = await _showDeleteConfirmation();
-    if (!confirmed) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir livro'),
+        content: const Text(
+          'Tem certeza que deseja excluir este livro permanentemente? '
+              'Esta ação não pode ser desfeita.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.red,
+            ),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
 
-    setState(() => _isLoading = true);
+    if (confirm == true) {
+      setState(() => _isLoading = true);
 
-    try {
-      await Future.delayed(const Duration(seconds: 1));
+      try {
+        await _bookService.deleteBook(widget.book.id);
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      _showSuccessMessage('Livro excluído com sucesso!');
-      Navigator.pop(context, true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Livro excluído com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
 
-    } catch (e) {
-      if (!mounted) return;
-      _showErrorMessage('Erro ao excluir livro: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
+        Navigator.pop(context, 'deleted');
+
+      } catch (e) {
+        if (!mounted) return;
+
+        _showErrorMessage('Erro ao excluir livro: $e');
+      } finally {
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }
@@ -265,12 +324,15 @@ class _BookEditScreenState extends State<BookEditScreen> {
                         ),
                         const SizedBox(height: 16),
                         // GENERO
-                        CustomInputField(
-                          label: 'Gênero',
-                          controller: _genreController,
+                        BookGenreDropdown(
+                          selectedGenre: _selectedGenre,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedGenre = value;
+                              _hasUnsavedChanges = true;
+                            });
+                          },
                           enabled: !_isLoading,
-                          hintText: 'Terror',
-                          validator: BookValidator.validateBookGenre,
                         ),
                         const SizedBox(height: 16),
                         // CONDICOES
@@ -386,7 +448,6 @@ class _BookEditScreenState extends State<BookEditScreen> {
     _titleController.dispose();
     _authorController.dispose();
     _publisherController.dispose();
-    _genreController.dispose();
     _conditionController.dispose();
     _descriptionController.dispose();
     super.dispose();

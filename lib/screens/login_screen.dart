@@ -4,6 +4,8 @@ import 'package:me_livrei/widgets/custom_input_field.dart';
 import 'package:me_livrei/constants/validators.dart';
 import 'package:me_livrei/screens/main_screen.dart';
 import 'package:me_livrei/screens/register_screen.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,16 +28,25 @@ class _LoginScreenState extends State<LoginScreen> {
     if (_formKey.currentState?.validate() != true) {
       return;
     }
+
     setState(() => _isLoading = true);
+
     try {
-      await Future.delayed(const Duration(seconds: 2));
+      final authService = Provider.of<AuthService>(context, listen: false);
+
+      await authService.signIn(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
       if (!mounted) return;
+
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const MainScreen()),
       );
-    } on Exception catch (e) {
+    } catch (e) {
       if (!mounted) return;
-      _showErrorMessage('Erro ao fazer login. Verifique suas credenciais.');
+      _showErrorMessage('Erro ao fazer login: $e');
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);

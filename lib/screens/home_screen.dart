@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:me_livrei/constants/app_colors.dart';
 import 'package:me_livrei/widgets/book_card.dart';
 import '../models/Book.dart';
+import '../services/book_service.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import 'add_book_screen.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,76 +16,35 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<Book> highlightBooks = [
-    Book(
-      id: '1',
-      userId: '1',
-      description: '',
-      title: 'A Biblioteca da Meia-Noite',
-      author: 'Matt Haig',
-      coverUrl:
-          'https://m.media-amazon.com/images/I/51kAYMwbQIL._SY445_SX342_ML2_.jpg',
-    ),
-    Book(
-      id: '2',
-      userId: '2',
-      description: '',
-      title: 'Sapiens',
-      author: 'Yuval Noah Harari',
-      coverUrl: 'https://m.media-amazon.com/images/I/81BTkpMrLYL._SY425_.jpg',
-    ),
-    Book(
-      id: '3',
-      userId: '3',
-      description: '',
-      title: 'Fahrenheit 451',
-      author: 'Ray Bradbury',
-      coverUrl: 'https://m.media-amazon.com/images/I/51tAD6LyZ-L._SY466_.jpg',
-    ),
-    Book(
-      id: '4',
-      userId: '4',
-      description: '',
-      title: 'A revolução dos bichos',
-      author: 'George Orwell',
-      coverUrl: 'https://m.media-amazon.com/images/I/91BsZhxCRjL._SY466_.jpg',
-    ),
-  ];
+  final BookService _bookService = BookService();
+  List<Book> _allBooks = [];
+  bool _isLoading = true;
+  String? _error;
 
-  final List<Book> interestBooks = [
-    Book(
-      id: '5',
-      userId: '5',
-      description: '',
-      title: '1984',
-      author: 'George Orwell',
-      coverUrl: 'https://m.media-amazon.com/images/I/61t0bwt1s3L._SY425_.jpg',
-    ),
-    Book(
-      id: '6',
-      userId: '6',
-      description: '',
-      title: 'Senhor das Moscas',
-      author: 'William Golding',
-      coverUrl: 'https://m.media-amazon.com/images/I/A1bFiBBPWFS._SY466_.jpg',
-    ),
-    Book(
-      id: '7',
-      userId: '7',
-      description: '',
-      title: 'Como fazer amigos',
-      author: 'Dale Carnegie',
-      coverUrl: 'https://m.media-amazon.com/images/I/71x-i7sKSvL._SY425_.jpg',
-    ),
-    Book(
-      id: '8',
-      userId: '8',
-      description: '',
-      title: 'O poder do Hábito',
-      author: 'Charles Duhigg',
-      coverUrl: 'https://m.media-amazon.com/images/I/815iPX0SgkL._SY425_.jpg',
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadBooks();
+  }
+
+  Future<void> _loadBooks() async {
+    try {
+      final books = await _bookService.getAvailableBooks();
+      if (mounted) {
+        setState(() {
+          _allBooks = books;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -132,58 +96,142 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(32, 0, 124, 16),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.show_chart,
-                    size: 24,
+            if (_isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(50),
+                  child: CircularProgressIndicator(
                     color: AppColors.terracotaQueimado,
                   ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Destaque do Me Livrei',
-                    style: TextStyle(
-                      color: AppColors.carvaoSuave,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                ),
+              )
+            else if (_error != null)
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(50),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 60,
+                        color: AppColors.bordoLiterario,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Erro ao carregar livros',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _error!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: AppColors.cinzaPoeira),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _isLoading = true;
+                            _error = null;
+                          });
+                          _loadBooks();
+                        },
+                        child: const Text('Tentar novamente'),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else if (_allBooks.isEmpty)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(50),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.book_outlined,
+                          size: 60,
+                          color: AppColors.cinzaPoeira,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          'Nenhum livro disponível',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Seja o primeiro a cadastrar um livro!',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: AppColors.cinzaPoeira),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
-            _buildHorizontalList(highlightBooks),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(32, 36, 124, 16),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.bookmark_add,
-                    size: 24,
-                    color: AppColors.terracotaQueimado,
+                )
+              else ...[
+                  _sectionHeader(
+                    'Em destaque',
+                    Icons.star_border,
+                    AppColors.ambarQuente,
+                    onSeeAll: () {},
                   ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Meus Interesses',
-                    style: TextStyle(
-                      color: AppColors.carvaoSuave,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            _buildHorizontalList(interestBooks),
-            const SizedBox(height: 30),
+                  _buildBookCarousel(_allBooks.take(5).toList()),
+
+                const SizedBox(height: 12),
+
+                _sectionHeader(
+                  'Todos os livros',
+                  Icons.book_outlined,
+                  AppColors.verdeMusgo,
+                  onSeeAll: () {},
+                ),
+                _buildBookCarousel(_allBooks),
+              ],
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHorizontalList(List<Book> books) {
+  Widget _sectionHeader(String title, IconData icon, Color color, {VoidCallback? onSeeAll}) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(32, 0, 32, 16),
+      child: Row(
+        children: [
+          Icon(icon, size: 24, color: color),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+              color: AppColors.carvaoSuave,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const Spacer(),
+          if (onSeeAll != null)
+            GestureDetector(
+              onTap: onSeeAll,
+              child: Text(
+                'Ver todos',
+                style: TextStyle(
+                  color: AppColors.terracotaQueimado,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookCarousel(List<Book> books) {
     return SizedBox(
       height: 308,
       child: ListView.builder(

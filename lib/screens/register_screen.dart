@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:me_livrei/screens/main_screen.dart';
 import '../../constants/app_colors.dart';
 import '../../constants/validators.dart';
 import '../../widgets/Custom_dropdowns.dart';
 import '../widgets/custom_input_field.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import '../services/user_service.dart';
+import '../models/user.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -70,17 +75,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Substituir por sua chamada de API real
-      await Future.delayed(const Duration(seconds: 2));
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userService = UserService();
+
+      final credential = await authService.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      final user = UserModel(
+        fullName: _nameController.text.trim(),
+        username: _usernameController.text.trim(),
+        email: _emailController.text.trim(),
+        phone: _phoneController.text.trim(),
+        state: _estadoId ?? '',
+        city: _cidadeId ?? '',
+        genre: _generoId ?? '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      await userService.createUser(user, credential.user!.uid);
 
       if (!mounted) return;
-
       _showMessage('Cadastro realizado com sucesso!');
-
-      // TODO: Navegar para próxima tela
-      // Navigator.pushReplacementNamed(context, '/home');
-      Navigator.pop(context);
-
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+     );
     } catch (e) {
       if (!mounted) return;
       _showMessage('Erro ao realizar cadastro: $e', isError: true);

@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:me_livrei/screens/main_screen.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
 import 'package:me_livrei/screens/login_screen.dart';
 import 'dart:async';
 
@@ -13,12 +16,27 @@ class _LoadingScreenState extends State<LoadingScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 3), () {
+    _checkAuthStatus();
+  }
+
+  Future<void> _checkAuthStatus() async {
+    await Future.delayed(const Duration(seconds: 3));
+
+    if (!mounted) return;
+
+    final authService = Provider.of<AuthService>(context, listen: false);
+
+    if (authService.isAuthenticated) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScreen()),
+      );
+    } else {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
-    });
+    }
   }
 
   @override
